@@ -2,8 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  BarChart, PieChart, LineChart, AreaChart,
-  Bar, Pie, Line, Area,
+  BarChart, PieChart, LineChart, AreaChart, ScatterChart,
+  Bar, Pie, Line, Area, Scatter, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, Cell
 } from 'recharts';
@@ -11,7 +11,7 @@ import {
 interface ChartCardProps {
   title: string;
   description?: string;
-  type: 'bar' | 'pie' | 'line' | 'area';
+  type: 'bar' | 'pie' | 'line' | 'area' | 'scatter' | 'histogram' | 'box';
   data: any[];
   config: {
     xKey?: string;
@@ -127,6 +127,53 @@ const ChartCard = ({
           </ResponsiveContainer>
         );
         
+      case 'scatter':
+        return (
+          <ResponsiveContainer width="100%" height={200}>
+            <ScatterChart margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="x" name="x" tick={{ fontSize: 10 }} />
+              <YAxis dataKey="y" name="y" tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Scatter name="Values" data={chartData} fill="#8884d8" />
+            </ScatterChart>
+          </ResponsiveContainer>
+        );
+      
+      case 'histogram':
+        // For simplicity, we'll render histogram as a bar chart
+        return (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Bar dataKey="value" fill="#f97316" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      
+      case 'box':
+        // For simplicity, we'll render a special bar chart as a box plot representation
+        return (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+              <XAxis type="number" tick={{ fontSize: 10 }} />
+              <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Bar dataKey="value" fill="#16a34a" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+        
       default:
         return <div>Chart type not supported</div>;
     }
@@ -166,6 +213,30 @@ const ChartCard = ({
           { name: 'North', value: 180 },
           { name: 'South', value: 320 },
           { name: 'Central', value: 280 }
+        ];
+      case 'scatter':
+        return [
+          { x: 100, y: 200, z: 200 },
+          { x: 120, y: 100, z: 260 },
+          { x: 170, y: 300, z: 400 },
+          { x: 140, y: 250, z: 280 },
+          { x: 150, y: 400, z: 500 },
+          { x: 110, y: 280, z: 200 }
+        ];
+      case 'histogram':
+        return [
+          { name: '0-10', value: 8 },
+          { name: '10-20', value: 15 },
+          { name: '20-30', value: 22 },
+          { name: '30-40', value: 18 },
+          { name: '40-50', value: 12 },
+          { name: '50-60', value: 5 }
+        ];
+      case 'box':
+        return [
+          { name: 'Category A', min: 20, q1: 40, median: 50, q3: 70, max: 90, value: 50 },
+          { name: 'Category B', min: 30, q1: 45, median: 60, q3: 80, max: 100, value: 60 },
+          { name: 'Category C', min: 10, q1: 30, median: 40, q3: 60, max: 80, value: 40 }
         ];
       default:
         return [];
