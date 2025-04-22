@@ -8,9 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import FileUploader from '@/components/FileUploader';
 import AnalysisLoader from '@/components/AnalysisLoader';
+import DetailedAnalysisLoader from '@/components/DetailedAnalysisLoader';
 import Dashboard from '@/components/Dashboard';
 import DataTable from '@/components/DataTable';
+import EditableDataTable from '@/components/EditableDataTable';
 import AIInsights from '@/components/AIInsights';
+import DatabaseConnector from '@/components/DatabaseConnector';
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -29,6 +32,7 @@ const Index = () => {
   const [databases, setDatabases] = useState<string[]>([]);
   const [tables, setTables] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
+  const [useDetailedLoader, setUseDetailedLoader] = useState(true);
   const { toast } = useToast();
 
   const handleFileSelect = (file: File) => {
@@ -38,6 +42,17 @@ const Index = () => {
     toast({
       title: "File selected",
       description: `${file.name} is ready for analysis.`,
+    });
+  };
+
+  const handleDatabaseConnect = (connectionData: typeof dbConnection) => {
+    setDbConnection(connectionData);
+    setConnectionStatus('connected');
+    setDashboardData(null); // Reset dashboard when connecting to a new database
+    
+    toast({
+      title: "Database connected",
+      description: `Connected to ${connectionData.database}.${connectionData.table}`,
     });
   };
 
@@ -136,53 +151,6 @@ const Index = () => {
     });
   };
 
-  const handleConnectDatabase = () => {
-    if (!dbConnection.host || !dbConnection.username) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setConnectionStatus('connecting');
-    
-    // Simulate database connection
-    setTimeout(() => {
-      setConnectionStatus('connected');
-      setDatabases(['sales_db', 'inventory_db', 'customers_db', 'analytics_db']);
-      
-      toast({
-        title: "Database connected",
-        description: "Successfully connected to MySQL server.",
-      });
-    }, 1500);
-  };
-  
-  const handleSelectDatabase = (database: string) => {
-    setDbConnection(prev => ({ ...prev, database }));
-    
-    // Simulate fetching tables for the selected database
-    setTimeout(() => {
-      setTables(['sales', 'products', 'customers', 'regions', 'transactions']);
-      
-      toast({
-        title: "Database selected",
-        description: `Tables from ${database} are now available.`,
-      });
-    }, 800);
-  };
-  
-  const handleSelectTable = (table: string) => {
-    setDbConnection(prev => ({ ...prev, table }));
-    
-    toast({
-      title: "Table selected",
-      description: `${table} is ready for analysis.`,
-    });
-  };
-
   const resetAnalysis = () => {
     setSelectedFile(null);
     setDashboardData(null);
@@ -199,6 +167,10 @@ const Index = () => {
     });
     setDatabases([]);
     setTables([]);
+  };
+
+  const toggleLoader = () => {
+    setUseDetailedLoader(!useDetailedLoader);
   };
 
   return (
@@ -238,107 +210,25 @@ const Index = () => {
               </TabsContent>
               
               <TabsContent value="database" className="mt-0">
-                <div className="bg-muted/40 rounded-lg p-6 border">
-                  <h3 className="text-lg font-medium mb-4 text-left">Connect to MySQL Database</h3>
-                  
-                  {connectionStatus === 'connected' ? (
-                    <div className="text-left space-y-4">
-                      <div className="flex items-center space-x-2 text-sm text-green-600">
-                        <Database className="h-4 w-4" />
-                        <span>Connected to {dbConnection.host}</span>
-                      </div>
-                      
-                      <div className="grid gap-4">
-                        <div>
-                          <Label htmlFor="database">Select Database</Label>
-                          <select 
-                            id="database"
-                            className="w-full p-2 mt-1 border rounded"
-                            value={dbConnection.database}
-                            onChange={(e) => handleSelectDatabase(e.target.value)}
-                          >
-                            <option value="">Select a database</option>
-                            {databases.map(db => (
-                              <option key={db} value={db}>{db}</option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        {dbConnection.database && (
-                          <div>
-                            <Label htmlFor="table">Select Table</Label>
-                            <select 
-                              id="table"
-                              className="w-full p-2 mt-1 border rounded"
-                              value={dbConnection.table}
-                              onChange={(e) => handleSelectTable(e.target.value)}
-                            >
-                              <option value="">Select a table</option>
-                              {tables.map(table => (
-                                <option key={table} value={table}>{table}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                      <div className="space-y-2">
-                        <Label htmlFor="host">Host</Label>
-                        <Input 
-                          id="host" 
-                          placeholder="localhost or IP address" 
-                          value={dbConnection.host}
-                          onChange={(e) => setDbConnection(prev => ({ ...prev, host: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="port">Port</Label>
-                        <Input 
-                          id="port" 
-                          placeholder="3306" 
-                          value={dbConnection.port}
-                          onChange={(e) => setDbConnection(prev => ({ ...prev, port: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input 
-                          id="username" 
-                          placeholder="Database username" 
-                          value={dbConnection.username}
-                          onChange={(e) => setDbConnection(prev => ({ ...prev, username: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input 
-                          id="password" 
-                          type="password" 
-                          placeholder="Database password" 
-                          value={dbConnection.password}
-                          onChange={(e) => setDbConnection(prev => ({ ...prev, password: e.target.value }))}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Button 
-                          className="w-full mt-2" 
-                          onClick={handleConnectDatabase}
-                          disabled={connectionStatus === 'connecting'}
-                        >
-                          {connectionStatus === 'connecting' ? 'Connecting...' : 'Connect'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <DatabaseConnector onConnected={handleDatabaseConnect} />
               </TabsContent>
             </Tabs>
           </motion.div>
         ) : isProcessing ? (
           <div className="py-12">
-            <AnalysisLoader progress={processingProgress} />
+            {useDetailedLoader ? (
+              <DetailedAnalysisLoader progress={processingProgress} />
+            ) : (
+              <AnalysisLoader progress={processingProgress} />
+            )}
+            <div className="mt-4 text-center">
+              <button 
+                onClick={toggleLoader} 
+                className="text-xs text-muted-foreground underline"
+              >
+                Switch to {useDetailedLoader ? "simple" : "detailed"} loader
+              </button>
+            </div>
           </div>
         ) : (selectedFile || connectionStatus === 'connected') && !dashboardData ? (
           <motion.div 
@@ -408,8 +298,31 @@ const Index = () => {
             
             <div className="grid gap-8 mb-8">
               <div className="grid gap-6 md:grid-cols-2">
-                <DataTable data={dashboardData.tableData} />
-                <AIInsights insights={dashboardData.insights} />
+                <EditableDataTable 
+                  data={dashboardData.tableData}
+                  onDataChange={(newData) => {
+                    setDashboardData({
+                      ...dashboardData,
+                      tableData: newData
+                    });
+                  }}
+                />
+                <AIInsights 
+                  insights={dashboardData.insights}
+                  onRefresh={() => {
+                    toast({
+                      title: "Regenerating insights",
+                      description: "Updating insights with the latest data...",
+                    });
+                    // This would call the backend in a real app
+                    setTimeout(() => {
+                      toast({
+                        title: "Insights updated",
+                        description: "New AI insights have been generated.",
+                      });
+                    }, 1500);
+                  }}
+                />
               </div>
               <Dashboard data={dashboardData} />
             </div>
