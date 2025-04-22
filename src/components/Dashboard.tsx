@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronDown, Edit, Save } from 'lucide-react';
+import { ChevronDown, Edit, Save, Download, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import DataSummary from './DataSummary';
 import ChartCard from './ChartCard';
+import { useToast } from "@/hooks/use-toast";
 
 interface ChartData {
   id: string;
@@ -30,6 +31,11 @@ interface DashboardProps {
       dataTypes: { [key: string]: number };
     };
     charts: ChartData[];
+    tableData?: {
+      headers: string[];
+      rows: any[][];
+    };
+    insights?: string[];
   };
 }
 
@@ -48,6 +54,9 @@ const Dashboard = ({ data }: DashboardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   // State to track edited charts
   const [editedCharts, setEditedCharts] = useState<ChartData[]>([]);
+  // State for layout configuration
+  const [layout, setLayout] = useState<'grid' | 'single'>('grid');
+  const { toast } = useToast();
 
   // Mock data for the initial render
   const mockData = {
@@ -117,31 +126,102 @@ const Dashboard = ({ data }: DashboardProps) => {
       // Save changes when exiting edit mode
       // In a real app, this would send the updated charts to the backend
       console.log('Saving changes to charts:', editedCharts);
+      
+      toast({
+        title: "Dashboard updated",
+        description: "Your changes have been saved.",
+      });
     }
     setIsEditing(!isEditing);
+  };
+
+  const saveDashboardConfiguration = () => {
+    // In a real app, this would save the dashboard configuration to localStorage or a backend
+    const dashboardConfig = {
+      charts: editedCharts,
+      layout,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Save to localStorage for demo purposes
+    localStorage.setItem('savedDashboard', JSON.stringify(dashboardConfig));
+    
+    toast({
+      title: "Dashboard saved",
+      description: "Your dashboard configuration has been saved and can be loaded later.",
+    });
+  };
+
+  const exportDashboardAsPDF = () => {
+    // This would be implemented with a library like jsPDF or html2pdf
+    toast({
+      title: "Export started",
+      description: "Your dashboard PDF is being generated...",
+    });
+    
+    // Simulate PDF generation delay
+    setTimeout(() => {
+      toast({
+        title: "Export complete",
+        description: "Your dashboard has been exported as PDF.",
+      });
+    }, 1500);
+  };
+
+  const toggleLayout = () => {
+    setLayout(prev => prev === 'grid' ? 'single' : 'grid');
   };
 
   return (
     <div className="w-full animate-fade-in">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Dashboard</h2>
-        <Button 
-          variant={isEditing ? "default" : "outline"} 
-          size="sm" 
-          onClick={toggleEditMode}
-        >
-          {isEditing ? (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </>
-          ) : (
-            <>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Dashboard
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={toggleLayout}
+            title={`Switch to ${layout === 'grid' ? 'single' : 'grid'} view`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportDashboardAsPDF}
+            title="Export as PDF"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={saveDashboardConfiguration}
+            title="Save dashboard configuration"
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant={isEditing ? "default" : "outline"} 
+            size="sm" 
+            onClick={toggleEditMode}
+          >
+            {isEditing ? (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Dashboard
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="charts" className="w-full">
@@ -151,7 +231,7 @@ const Dashboard = ({ data }: DashboardProps) => {
         </TabsList>
         
         <TabsContent value="charts" className="min-h-[400px]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={`grid gap-6 ${layout === 'grid' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
             {(isEditing ? editedCharts : dashboardData.charts).map((chart) => (
               <div key={chart.id} className="relative">
                 {isEditing && (

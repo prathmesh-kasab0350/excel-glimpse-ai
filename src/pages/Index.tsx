@@ -1,8 +1,11 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChartBar, FileSpreadsheet } from 'lucide-react';
+import { ChartBar, FileSpreadsheet, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import FileUploader from '@/components/FileUploader';
 import AnalysisLoader from '@/components/AnalysisLoader';
 import Dashboard from '@/components/Dashboard';
@@ -15,6 +18,17 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dbConnection, setDbConnection] = useState({
+    host: '',
+    username: '',
+    password: '',
+    port: '3306',
+    database: '',
+    table: ''
+  });
+  const [databases, setDatabases] = useState<string[]>([]);
+  const [tables, setTables] = useState<string[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'failed'>('idle');
   const { toast } = useToast();
 
   const handleFileSelect = (file: File) => {
@@ -28,7 +42,7 @@ const Index = () => {
   };
 
   const handleGenerateDashboard = () => {
-    if (!selectedFile) return;
+    if (!selectedFile && connectionStatus !== 'connected') return;
     
     setIsProcessing(true);
     setProcessingProgress(0);
@@ -122,11 +136,69 @@ const Index = () => {
     });
   };
 
+  const handleConnectDatabase = () => {
+    if (!dbConnection.host || !dbConnection.username) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setConnectionStatus('connecting');
+    
+    // Simulate database connection
+    setTimeout(() => {
+      setConnectionStatus('connected');
+      setDatabases(['sales_db', 'inventory_db', 'customers_db', 'analytics_db']);
+      
+      toast({
+        title: "Database connected",
+        description: "Successfully connected to MySQL server.",
+      });
+    }, 1500);
+  };
+  
+  const handleSelectDatabase = (database: string) => {
+    setDbConnection(prev => ({ ...prev, database }));
+    
+    // Simulate fetching tables for the selected database
+    setTimeout(() => {
+      setTables(['sales', 'products', 'customers', 'regions', 'transactions']);
+      
+      toast({
+        title: "Database selected",
+        description: `Tables from ${database} are now available.`,
+      });
+    }, 800);
+  };
+  
+  const handleSelectTable = (table: string) => {
+    setDbConnection(prev => ({ ...prev, table }));
+    
+    toast({
+      title: "Table selected",
+      description: `${table} is ready for analysis.`,
+    });
+  };
+
   const resetAnalysis = () => {
     setSelectedFile(null);
     setDashboardData(null);
     setIsProcessing(false);
     setProcessingProgress(0);
+    setConnectionStatus('idle');
+    setDbConnection({
+      host: '',
+      username: '',
+      password: '',
+      port: '3306',
+      database: '',
+      table: ''
+    });
+    setDatabases([]);
+    setTables([]);
   };
 
   return (
@@ -141,7 +213,7 @@ const Index = () => {
       </header>
       
       <main className="flex-1 container px-4 md:px-6 py-8 max-w-6xl">
-        {!selectedFile && !dashboardData ? (
+        {!selectedFile && connectionStatus !== 'connected' && !dashboardData ? (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -152,27 +224,140 @@ const Index = () => {
               Transform Your Data into Insights
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto mb-10">
-              Upload your Excel or CSV file and let our AI generate beautiful, insightful visualizations in seconds.
+              Upload your Excel or CSV file, or connect to a MySQL database and let our AI generate beautiful, insightful visualizations in seconds.
             </p>
             
-            <FileUploader onFileSelect={handleFileSelect} />
+            <Tabs defaultValue="file" className="max-w-2xl mx-auto">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="file">File Upload</TabsTrigger>
+                <TabsTrigger value="database">Database Connection</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="file" className="mt-0">
+                <FileUploader onFileSelect={handleFileSelect} />
+              </TabsContent>
+              
+              <TabsContent value="database" className="mt-0">
+                <div className="bg-muted/40 rounded-lg p-6 border">
+                  <h3 className="text-lg font-medium mb-4 text-left">Connect to MySQL Database</h3>
+                  
+                  {connectionStatus === 'connected' ? (
+                    <div className="text-left space-y-4">
+                      <div className="flex items-center space-x-2 text-sm text-green-600">
+                        <Database className="h-4 w-4" />
+                        <span>Connected to {dbConnection.host}</span>
+                      </div>
+                      
+                      <div className="grid gap-4">
+                        <div>
+                          <Label htmlFor="database">Select Database</Label>
+                          <select 
+                            id="database"
+                            className="w-full p-2 mt-1 border rounded"
+                            value={dbConnection.database}
+                            onChange={(e) => handleSelectDatabase(e.target.value)}
+                          >
+                            <option value="">Select a database</option>
+                            {databases.map(db => (
+                              <option key={db} value={db}>{db}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        {dbConnection.database && (
+                          <div>
+                            <Label htmlFor="table">Select Table</Label>
+                            <select 
+                              id="table"
+                              className="w-full p-2 mt-1 border rounded"
+                              value={dbConnection.table}
+                              onChange={(e) => handleSelectTable(e.target.value)}
+                            >
+                              <option value="">Select a table</option>
+                              {tables.map(table => (
+                                <option key={table} value={table}>{table}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                      <div className="space-y-2">
+                        <Label htmlFor="host">Host</Label>
+                        <Input 
+                          id="host" 
+                          placeholder="localhost or IP address" 
+                          value={dbConnection.host}
+                          onChange={(e) => setDbConnection(prev => ({ ...prev, host: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="port">Port</Label>
+                        <Input 
+                          id="port" 
+                          placeholder="3306" 
+                          value={dbConnection.port}
+                          onChange={(e) => setDbConnection(prev => ({ ...prev, port: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input 
+                          id="username" 
+                          placeholder="Database username" 
+                          value={dbConnection.username}
+                          onChange={(e) => setDbConnection(prev => ({ ...prev, username: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input 
+                          id="password" 
+                          type="password" 
+                          placeholder="Database password" 
+                          value={dbConnection.password}
+                          onChange={(e) => setDbConnection(prev => ({ ...prev, password: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Button 
+                          className="w-full mt-2" 
+                          onClick={handleConnectDatabase}
+                          disabled={connectionStatus === 'connecting'}
+                        >
+                          {connectionStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </motion.div>
         ) : isProcessing ? (
           <div className="py-12">
             <AnalysisLoader progress={processingProgress} />
           </div>
-        ) : selectedFile && !dashboardData ? (
+        ) : (selectedFile || connectionStatus === 'connected') && !dashboardData ? (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-center py-8"
           >
             <h2 className="text-2xl font-semibold mb-2">
-              Ready to analyze {selectedFile.name}
+              {selectedFile ? (
+                `Ready to analyze ${selectedFile.name}`
+              ) : (
+                `Ready to analyze ${dbConnection.database}.${dbConnection.table}`
+              )}
             </h2>
-            <p className="text-muted-foreground mb-8">
-              File size: {(selectedFile.size / 1024).toFixed(1)} KB
-            </p>
+            {selectedFile && (
+              <p className="text-muted-foreground mb-8">
+                File size: {(selectedFile.size / 1024).toFixed(1)} KB
+              </p>
+            )}
             
             <div className="flex justify-center gap-4">
               <Button 
@@ -197,16 +382,27 @@ const Index = () => {
           >
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-semibold">
-                  {selectedFile?.name}
-                </h2>
+                {selectedFile ? (
+                  <>
+                    <FileSpreadsheet className="h-5 w-5 text-primary" />
+                    <h2 className="text-2xl font-semibold">
+                      {selectedFile?.name}
+                    </h2>
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-5 w-5 text-primary" />
+                    <h2 className="text-2xl font-semibold">
+                      {dbConnection.database}.{dbConnection.table}
+                    </h2>
+                  </>
+                )}
               </div>
               <Button 
                 variant="outline" 
                 onClick={resetAnalysis}
               >
-                Analyze Another File
+                Analyze Another Source
               </Button>
             </div>
             

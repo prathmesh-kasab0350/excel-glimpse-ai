@@ -1,15 +1,25 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lightbulb, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Lightbulb, ThumbsUp, ThumbsDown, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from "@/hooks/use-toast";
 
 interface AIInsightsProps {
   insights: string[];
   isLoading?: boolean;
+  onRefresh?: () => void;
 }
 
-const AIInsights = ({ insights = [], isLoading = false }: AIInsightsProps) => {
+const AIInsights = ({ 
+  insights = [], 
+  isLoading = false,
+  onRefresh
+}: AIInsightsProps) => {
+  const [feedbackGiven, setFeedbackGiven] = useState<'positive' | 'negative' | null>(null);
+  const { toast } = useToast();
+  
   // Sample insights if none are provided
   const displayInsights = insights.length ? insights : [
     "Sales are growing consistently at 15% month-over-month",
@@ -20,8 +30,35 @@ const AIInsights = ({ insights = [], isLoading = false }: AIInsightsProps) => {
   ];
 
   const handleFeedback = (type: 'positive' | 'negative') => {
+    setFeedbackGiven(type);
+    
+    toast({
+      title: `Thank you for your ${type} feedback`,
+      description: "This helps improve our AI insights."
+    });
+    
+    // In a real app, this would send feedback to the backend
     console.log(`User gave ${type} feedback on insights`);
-    // This would send feedback to the backend to improve future insights
+  };
+  
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      // Simulation for demo purposes
+      toast({
+        title: "Regenerating insights",
+        description: "New insights are being generated..."
+      });
+      
+      // Simulate refresh delay
+      setTimeout(() => {
+        toast({
+          title: "Insights updated",
+          description: "New insights have been generated."
+        });
+      }, 1500);
+    }
   };
 
   return (
@@ -32,36 +69,51 @@ const AIInsights = ({ insights = [], isLoading = false }: AIInsightsProps) => {
             <Lightbulb className="h-5 w-5 text-primary" />
             <CardTitle className="text-lg font-medium">Gemini AI Insights</CardTitle>
           </div>
-          {!isLoading && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Helpful?</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0" 
-                onClick={() => handleFeedback('positive')}
-              >
-                <ThumbsUp className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 w-7 p-0" 
-                onClick={() => handleFeedback('negative')}
-              >
-                <ThumbsDown className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {!isLoading && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 w-8 p-0" 
+                  onClick={handleRefresh}
+                  title="Regenerate insights"
+                >
+                  <RotateCw className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span>Helpful?</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`h-7 w-7 p-0 ${feedbackGiven === 'positive' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => handleFeedback('positive')}
+                    disabled={feedbackGiven !== null}
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`h-7 w-7 p-0 ${feedbackGiven === 'negative' ? 'bg-primary/10 text-primary' : ''}`}
+                    onClick={() => handleFeedback('negative')}
+                    disabled={feedbackGiven !== null}
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-3 animate-pulse">
+          <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-start gap-2">
-                <div className="rounded-full bg-primary/20 h-5 w-5 mt-0.5"></div>
-                <div className="h-4 bg-primary/10 rounded w-full"></div>
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-4 w-full" />
               </div>
             ))}
           </div>
