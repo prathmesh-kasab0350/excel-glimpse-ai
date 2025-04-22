@@ -2,6 +2,7 @@
 import React from 'react';
 import { ChartBar, Loader } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 interface AnalysisLoaderProps {
   progress?: number;
@@ -12,6 +13,24 @@ const AnalysisLoader = ({
   progress = 0, 
   status = 'Analyzing your data...' 
 }: AnalysisLoaderProps) => {
+  // Define the steps of the analysis process
+  const stages = [
+    { threshold: 10, message: 'Reading file content...' },
+    { threshold: 30, message: 'Identifying data types...' },
+    { threshold: 50, message: 'Generating insights...' },
+    { threshold: 70, message: 'Creating visualizations...' },
+    { threshold: 90, message: 'Finalizing dashboard...' },
+    { threshold: 100, message: 'Done!' }
+  ];
+  
+  // Get the current stage based on progress
+  const currentStage = stages.reduce((prev, curr) => {
+    return progress >= curr.threshold ? curr : prev;
+  }, stages[0]);
+  
+  // Display the appropriate message based on progress or use provided status
+  const displayStatus = status === 'Analyzing your data...' ? currentStage.message : status;
+
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto py-8 animate-fade-in">
       <div className="relative mb-6">
@@ -26,17 +45,17 @@ const AnalysisLoader = ({
         </div>
       </div>
 
-      <h3 className="text-lg font-medium mb-2">{status}</h3>
-      <p className="text-sm text-muted-foreground mb-5">
+      <h3 className="text-lg font-medium mb-2">{displayStatus}</h3>
+      <p className="text-sm text-muted-foreground mb-6">
         Our AI is identifying patterns and preparing visualizations
       </p>
 
       {progress > 0 && (
-        <div className="w-full max-w-xs bg-secondary rounded-full h-2.5 mb-3">
-          <div 
-            className="bg-primary h-2.5 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="w-full max-w-xs">
+          <Progress value={progress} className="h-2" />
+          <p className="text-xs text-muted-foreground text-right mt-1">
+            {Math.round(progress)}% complete
+          </p>
         </div>
       )}
     </div>

@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChartBar } from 'lucide-react';
+import { ChartBar, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FileUploader from '@/components/FileUploader';
 import AnalysisLoader from '@/components/AnalysisLoader';
 import Dashboard from '@/components/Dashboard';
+import DataTable from '@/components/DataTable';
+import AIInsights from '@/components/AIInsights';
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -93,6 +95,23 @@ const Index = () => {
           config: {},
         },
       ],
+      tableData: {
+        headers: ['ID', 'Product', 'Category', 'Price', 'Date', 'Stock'],
+        rows: [
+          [1, 'Laptop', 'Electronics', '$1299.99', '2025-01-15', 45],
+          [2, 'Desk Chair', 'Furniture', '$249.99', '2025-01-16', 23],
+          [3, 'Coffee Maker', 'Appliances', '$89.99', '2025-01-17', 15],
+          [4, 'Headphones', 'Electronics', '$149.99', '2025-01-18', 34],
+          [5, 'Desk Lamp', 'Furniture', '$39.99', '2025-01-19', 50],
+        ]
+      },
+      insights: [
+        "Sales are growing consistently at 15% month-over-month",
+        "The Electronics category shows the highest profit margin (24%)",
+        "Customer retention is stronger in the West region",
+        "There's a seasonal pattern in furniture sales peaking in Q2",
+        "Product returns are lowest for items in the $50-$100 price range"
+      ]
     };
     
     setDashboardData(mockData);
@@ -177,9 +196,12 @@ const Index = () => {
             transition={{ duration: 0.5 }}
           >
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-semibold">
-                Dashboard for {selectedFile?.name}
-              </h2>
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-semibold">
+                  {selectedFile?.name}
+                </h2>
+              </div>
               <Button 
                 variant="outline" 
                 onClick={resetAnalysis}
@@ -188,7 +210,13 @@ const Index = () => {
               </Button>
             </div>
             
-            <Dashboard data={dashboardData} />
+            <div className="grid gap-8 mb-8">
+              <div className="grid gap-6 md:grid-cols-2">
+                <DataTable data={dashboardData.tableData} />
+                <AIInsights insights={dashboardData.insights} />
+              </div>
+              <Dashboard data={dashboardData} />
+            </div>
           </motion.div>
         )}
       </main>

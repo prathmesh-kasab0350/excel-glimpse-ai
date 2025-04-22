@@ -1,7 +1,12 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, PieChart, LineChart, AreaChart } from 'recharts';
+import { 
+  BarChart, PieChart, LineChart, AreaChart,
+  Bar, Pie, Line, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  ResponsiveContainer, Cell
+} from 'recharts';
 
 interface ChartCardProps {
   title: string;
@@ -27,46 +32,145 @@ const ChartCard = ({
   config, 
   className 
 }: ChartCardProps) => {
+  // Generate sample data if none is provided
+  const chartData = data.length ? data : generateSampleData(type);
+  
+  // Default colors for the charts
+  const COLORS = ['#2563eb', '#0d9488', '#9333ea', '#f97316', '#dc2626', '#16a34a'];
+  
   const renderChart = () => {
-    const width = 350;
-    const height = 200;
-    
-    const chartProps = {
-      width,
-      height,
-      data,
-      margin: { top: 5, right: 5, bottom: 5, left: 5 },
-    };
-
     switch (type) {
       case 'bar':
         return (
-          <BarChart {...chartProps}>
-            {/* Bar chart implementation */}
-          </BarChart>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         );
+        
       case 'pie':
         return (
-          <PieChart {...chartProps}>
-            {/* Pie chart implementation */}
-          </PieChart>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                outerRadius={70}
+                innerRadius={30}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="name"
+                paddingAngle={2}
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                labelLine={false}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value) => [`${value}`, 'Value']}
+                contentStyle={{ fontSize: 12, borderRadius: '8px' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         );
+        
       case 'line':
         return (
-          <LineChart {...chartProps}>
-            {/* Line chart implementation */}
-          </LineChart>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#9333ea" 
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         );
+        
       case 'area':
         return (
-          <AreaChart {...chartProps}>
-            {/* Area chart implementation */}
-          </AreaChart>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#0d9488" 
+                fill="#0d9488" 
+                fillOpacity={0.3}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         );
+        
       default:
         return <div>Chart type not supported</div>;
     }
   };
+
+  // Function to generate sample data for each chart type
+  function generateSampleData(chartType: string) {
+    switch (chartType) {
+      case 'bar':
+        return [
+          { name: 'Jan', value: 400 },
+          { name: 'Feb', value: 300 },
+          { name: 'Mar', value: 600 },
+          { name: 'Apr', value: 800 },
+          { name: 'May', value: 500 }
+        ];
+      case 'pie':
+        return [
+          { name: 'Group A', value: 400 },
+          { name: 'Group B', value: 300 },
+          { name: 'Group C', value: 300 },
+          { name: 'Group D', value: 200 }
+        ];
+      case 'line':
+        return [
+          { name: 'Q1', value: 240 },
+          { name: 'Q2', value: 390 },
+          { name: 'Q3', value: 320 },
+          { name: 'Q4', value: 500 },
+          { name: 'Q1', value: 380 },
+          { name: 'Q2', value: 430 }
+        ];
+      case 'area':
+        return [
+          { name: 'East', value: 240 },
+          { name: 'West', value: 300 },
+          { name: 'North', value: 180 },
+          { name: 'South', value: 320 },
+          { name: 'Central', value: 280 }
+        ];
+      default:
+        return [];
+    }
+  }
 
   return (
     <Card className={className}>
