@@ -13,14 +13,19 @@ const AnalysisLoader = ({
   progress = 0, 
   status = 'Analyzing your data...' 
 }: AnalysisLoaderProps) => {
-  // Define the steps of the analysis process
+  // Define the steps of the analysis process with more details
   const stages = [
-    { threshold: 10, message: 'Reading file content...' },
-    { threshold: 30, message: 'Identifying data types...' },
-    { threshold: 50, message: 'Generating insights...' },
-    { threshold: 70, message: 'Creating visualizations...' },
-    { threshold: 90, message: 'Finalizing dashboard...' },
-    { threshold: 100, message: 'Done!' }
+    { threshold: 5, message: 'Reading file content...' },
+    { threshold: 15, message: 'Parsing data structure...' },
+    { threshold: 25, message: 'Identifying column types...' },
+    { threshold: 35, message: 'Processing JSON columns...' },
+    { threshold: 45, message: 'Generating statistical summary...' },
+    { threshold: 55, message: 'Determining optimal visualizations...' },
+    { threshold: 65, message: 'Creating charts and graphs...' },
+    { threshold: 75, message: 'Sending data to Gemini AI...' },
+    { threshold: 85, message: 'Processing AI insights...' },
+    { threshold: 95, message: 'Assembling dashboard...' },
+    { threshold: 100, message: 'Ready!' }
   ];
   
   // Get the current stage based on progress
@@ -47,7 +52,7 @@ const AnalysisLoader = ({
 
       <h3 className="text-lg font-medium mb-2">{displayStatus}</h3>
       <p className="text-sm text-muted-foreground mb-6">
-        Our AI is identifying patterns and preparing visualizations
+        Our AI is analyzing your data and creating optimal visualizations
       </p>
 
       {progress > 0 && (

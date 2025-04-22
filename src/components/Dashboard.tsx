@@ -1,9 +1,26 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronDown, Edit, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import DataSummary from './DataSummary';
 import ChartCard from './ChartCard';
+
+interface ChartData {
+  id: string;
+  title: string;
+  description?: string;
+  type: 'bar' | 'pie' | 'line' | 'area' | 'scatter' | 'histogram' | 'box';
+  data: any[];
+  config: any;
+}
 
 interface DashboardProps {
   data: {
@@ -12,18 +29,26 @@ interface DashboardProps {
       totalColumns: number;
       dataTypes: { [key: string]: number };
     };
-    charts: {
-      id: string;
-      title: string;
-      description?: string;
-      type: 'bar' | 'pie' | 'line' | 'area';
-      data: any[];
-      config: any;
-    }[];
+    charts: ChartData[];
   };
 }
 
+const chartTypes = [
+  { label: 'Bar Chart', value: 'bar' },
+  { label: 'Pie Chart', value: 'pie' },
+  { label: 'Line Chart', value: 'line' },
+  { label: 'Area Chart', value: 'area' },
+  { label: 'Scatter Plot', value: 'scatter' },
+  { label: 'Histogram', value: 'histogram' },
+  { label: 'Box Plot', value: 'box' }
+];
+
 const Dashboard = ({ data }: DashboardProps) => {
+  // State for edit mode
+  const [isEditing, setIsEditing] = useState(false);
+  // State to track edited charts
+  const [editedCharts, setEditedCharts] = useState<ChartData[]>([]);
+
   // Mock data for the initial render
   const mockData = {
     summary: {
@@ -71,9 +96,54 @@ const Dashboard = ({ data }: DashboardProps) => {
 
   // Use real data if available, otherwise use mock data
   const dashboardData = data || mockData;
+  
+  // Initialize editedCharts if empty
+  React.useEffect(() => {
+    if (editedCharts.length === 0) {
+      setEditedCharts([...dashboardData.charts]);
+    }
+  }, [dashboardData.charts]);
+
+  const handleChartTypeChange = (chartId: string, newType: ChartData['type']) => {
+    setEditedCharts(prev => 
+      prev.map(chart => 
+        chart.id === chartId ? { ...chart, type: newType } : chart
+      )
+    );
+  };
+
+  const toggleEditMode = () => {
+    if (isEditing) {
+      // Save changes when exiting edit mode
+      // In a real app, this would send the updated charts to the backend
+      console.log('Saving changes to charts:', editedCharts);
+    }
+    setIsEditing(!isEditing);
+  };
 
   return (
     <div className="w-full animate-fade-in">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Dashboard</h2>
+        <Button 
+          variant={isEditing ? "default" : "outline"} 
+          size="sm" 
+          onClick={toggleEditMode}
+        >
+          {isEditing ? (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Save Changes
+            </>
+          ) : (
+            <>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Dashboard
+            </>
+          )}
+        </Button>
+      </div>
+
       <Tabs defaultValue="charts" className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="charts">Charts</TabsTrigger>
@@ -81,17 +151,42 @@ const Dashboard = ({ data }: DashboardProps) => {
         </TabsList>
         
         <TabsContent value="charts" className="min-h-[400px]">
-          <div className="dashboard-grid">
-            {dashboardData.charts.map((chart) => (
-              <ChartCard 
-                key={chart.id}
-                title={chart.title}
-                description={chart.description}
-                type={chart.type}
-                data={chart.data}
-                config={chart.config}
-                className="shadow-sm hover:shadow-md transition-shadow duration-200"
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {(isEditing ? editedCharts : dashboardData.charts).map((chart) => (
+              <div key={chart.id} className="relative">
+                {isEditing && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8">
+                          <span>Chart Type</span>
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {chartTypes.map((type) => (
+                          <DropdownMenuItem 
+                            key={type.value}
+                            onClick={() => handleChartTypeChange(chart.id, type.value as ChartData['type'])}
+                            className={chart.type === type.value ? "bg-primary/10" : ""}
+                          >
+                            {type.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+                <ChartCard 
+                  key={chart.id}
+                  title={chart.title}
+                  description={chart.description}
+                  type={chart.type}
+                  data={chart.data}
+                  config={chart.config}
+                  className="shadow-sm hover:shadow-md transition-shadow duration-200"
+                />
+              </div>
             ))}
           </div>
         </TabsContent>
@@ -104,7 +199,7 @@ const Dashboard = ({ data }: DashboardProps) => {
               dataTypes={dashboardData.summary.dataTypes}
             />
             
-            {/* Additional summary components can be added here */}
+            {/* Additional summary components */}
             <Card className="shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-medium">Data Quality</CardTitle>
